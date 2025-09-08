@@ -4,6 +4,14 @@ use ChaoticIngenuity\LaravelMCP\Auth\AuthenticationResult;
 interface AuthenticatorInterface
 {
   /**
+   * Check if this authenticator handles the given type
+   * 
+   * @param string $type
+   * @return bool
+   */
+  public function handles(string $type): bool;
+
+  /**
    * Authenticate the given credentials
    * 
    * @param string $type The authentication type (api_key, basic_auth, bearer_token)
@@ -20,12 +28,4 @@ interface AuthenticatorInterface
    * @return string|null
    */
   public function getClientId(string $type, array $credentials): ?string;
-
-  /**
-   * Check if this authenticator handles the given type
-   * 
-   * @param string $type
-   * @return bool
-   */
-  public function handles(string $type): bool;
 }

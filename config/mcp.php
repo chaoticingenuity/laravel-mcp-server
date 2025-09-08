@@ -48,6 +48,13 @@ return [
       env('MCP_BEARER_TOKEN_1'),
     ]),
 
+    // Bouncer integration settings
+    'bouncer' => [
+      'enabled' => env('MCP_BOUNCER_ENABLED', false),
+      'cache_abilities' => env('MCP_BOUNCER_CACHE_ABILITIES', true),
+      'ability_prefix' => env('MCP_BOUNCER_ABILITY_PREFIX', 'mcp.'),
+    ],
+
     // New custom authenticator classes
     'custom_authenticators' => [
       // Add custom authenticators here

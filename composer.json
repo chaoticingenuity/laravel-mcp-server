@@ -23,6 +23,9 @@
     "illuminate/http": "^10.0|^11.0",
     "illuminate/database": "^10.0|^11.0"
   },
+  "suggest": {
+    "silber/bouncer": "^1.0 - Enhanced role and ability management for MCP permissions"
+  },
   "require-dev": {
     "orchestra/testbench": "^8.0|^9.0",
     "phpunit/phpunit": "^10.0",

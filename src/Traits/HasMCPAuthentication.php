@@ -2,6 +2,7 @@
 namespace ChaoticIngenuity\LaravelMCP\Traits;
 
 use ChaoticIngenuity\LaravelMCP\Models\ApiKey;
+use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 
@@ -161,9 +162,13 @@ trait HasMCPAuthentication
 
   /**
    * Get the user's MCP permissions
+   * Uses Bouncer if enabled and available, falls back to array-based permissions
    */
   public function getMCPPermissions(): array
   {
+    if ($this->shouldUseBouncer()) {
+      return app(PermissionManagerInterface::class)->getUserAbilities($this);
+    }
     return $this->mcp_permissions ?? [
       'tools.echo',
       'resources.status'
@@ -191,11 +196,21 @@ trait HasMCPAuthentication
    */
   public function hasMCPPermission(string $permission): bool
   {
-    $permissions = $this->getMCPPermissions();
+    if ($this->shouldUseBouncer()) {
+      return app(PermissionManagerInterface::class)->userHasAbility($this, $permission);
+    }
 
+    // Fallback to original implementation
+    $permissions = $this->getMCPPermissions();
     return in_array('admin', $permissions) ||
       in_array('*', $permissions) ||
       in_array($permission, $permissions);
+  }
+
+  private function shouldUseBouncer(): bool
+  {
+    return config('mcp.auth.bouncer.enabled', false) &&
+      class_exists(\Silber\Bouncer\BouncerFacade::class);
   }
 
   /**

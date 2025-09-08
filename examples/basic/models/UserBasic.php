@@ -7,7 +7,7 @@ use ChaoticIngenuity\LaravelMCP\Contracts\MCPUserInterface;
 use ChaoticIngenuity\LaravelMCP\Models\ApiKey;
 use Illuminate\Support\Facades\Hash;
 
-class User extends Authenticatable implements MCPUserInterface
+class UserBasic extends Authenticatable implements MCPUserInterface
 {
   use HasMCPAuthentication;
 

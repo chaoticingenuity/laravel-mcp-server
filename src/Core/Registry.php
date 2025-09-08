@@ -62,12 +62,16 @@ class Registry
 
     return null;
   }
-
+  private static array $compiledPatterns = [];
   private function matchesTemplate(string $template, string $uri): bool
   {
-    $pattern = preg_quote($template, '/');
-    $pattern = str_replace('\{[^}]+\}', '[^/]+', $pattern);
-    return preg_match("/^{$pattern}$/", $uri);
+    if (!isset(self::$compiledPatterns[$template])) {
+      $pattern = preg_quote($template, '/');
+      $pattern = str_replace('\\{[^}]+\\}', '([^/]+)', $pattern);
+      self::$compiledPatterns[$template] = "/^{$pattern}$/";
+    }
+
+    return preg_match(self::$compiledPatterns[$template], $uri) === 1;
   }
 
   private function autoRegister(): void

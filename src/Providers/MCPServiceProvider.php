@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{RateLimiter, Route};
 use ChaoticIngenuity\LaravelMCP\{MCPServer};
 use ChaoticIngenuity\LaravelMCP\Core\{Registry, ContextFactory};
+use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
+use ChaoticIngenuity\LaravelMCP\Auth\{DefaultPermissionManager, BouncerPermissionManager};
 
 class MCPServiceProvider extends ServiceProvider
 {
@@ -16,10 +18,36 @@ class MCPServiceProvider extends ServiceProvider
     $this->mergeConfigFrom(__DIR__ . '/../../config/mcp.php', 'mcp');
 
     $this->registerCoreServices();
+    $this->registerPermissionManager();
+  }
+  private function registerPermissionManager()
+  {
+    // Auto-detect Bouncer and register appropriate permission manager
+    $this->app->singleton(
+      PermissionManagerInterface::class,
+      fn($app) =>
+      match (true) {
+        (config('mcp.auth.bouncer.enabled', false) && $this->isBouncerInstalled()) => new BouncerPermissionManager(),
+        default => new DefaultPermissionManager(),
+      }
+    );
+  }
+  private function isBouncerInstalled(): bool
+  {
+    return class_exists(\Silber\Bouncer\BouncerFacade::class);
   }
 
   public function boot(): void
   {
+    $this->validateConfiguration();
+    $this->validateBouncerConfiguration();
+
+    if ($this->app->runningInConsole()) {
+      $this->commands([
+        \ChaoticIngenuity\LaravelMCP\Console\Commands\MCPSetupCommand::class,
+      ]);
+    }
+
     $this->publishes([
       __DIR__ . '/../../config/mcp.php' => config_path('mcp.php'),
     ], 'mcp-config');
@@ -33,6 +61,14 @@ class MCPServiceProvider extends ServiceProvider
     ], 'mcp-controllers');
 
     $this->publishes([
+      __DIR__ . '/../../examples/bouncer' => base_path('examples/mcp/bouncer'),
+    ], 'mcp-examples-bouncer');
+
+    $this->publishes([
+      __DIR__ . '/../../examples/basic' => base_path('examples/mcp/basic'),
+    ], 'mcp-examples-basic');
+
+    $this->publishes([
       __DIR__ . '/../../stubs/CustomMCPTool.php' => app_path('Services/Custom/MCP/Tools/CustomMCPTool.php'),
       __DIR__ . '/../../stubs/CustomMCPResource.php' => app_path('Services/Custom/MCP/Resources/CustomMCPResource.php'),
     ], 'mcp-stubs');
@@ -41,7 +77,31 @@ class MCPServiceProvider extends ServiceProvider
     $this->registerRoutes();
     $this->registerMiddleware();
   }
+  private function validateConfiguration()
+  {
+    $requiredConfigs = [
+      'mcp.server.name',
+      'mcp.server.version',
+      // 'mcp.auth.api_keys',
+    ];
 
+    foreach ($requiredConfigs as $config) {
+      if (empty(config($config))) {
+        throw new \RuntimeException("Required MCP configuration missing: {$config}");
+      }
+    }
+  }
+  private function validateBouncerConfiguration()
+  {
+    if (config('mcp.auth.bouncer.enabled', false)) {
+      if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        throw new \RuntimeException(
+          'MCP Bouncer integration is enabled but Bouncer package is not installed. ' .
+          'Run: composer require silber/bouncer'
+        );
+      }
+    }
+  }
   private function registerCoreServices(): void
   {
     $this->app->singleton(Registry::class, function ($app) {

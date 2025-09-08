@@ -1,0 +1,23 @@
+<?php
+
+  namespace App\Models;
+
+  use Illuminate\Foundation\Auth\User as Authenticatable;
+  use ChaoticIngenuity\LaravelMCP\Traits\HasMCPAuthentication;
+  use ChaoticIngenuity\LaravelMCP\Contracts\MCPUserInterface;
+
+  // Only include Bouncer traits if package is available
+  @if(class_exists(\Silber\Bouncer\Database\HasRolesAndAbilities::class))
+  use Silber\Bouncer\Database\HasRolesAndAbilities;
+  @endif
+
+  class User extends Authenticatable implements MCPUserInterface
+  {
+      use HasMCPAuthentication;
+
+      @if(class_exists(\Silber\Bouncer\Database\HasRolesAndAbilities::class))
+      use HasRolesAndAbilities;
+      @endif
+
+      // Model implementation...
+  }
