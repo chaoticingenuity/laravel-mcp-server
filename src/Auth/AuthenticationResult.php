@@ -40,4 +40,9 @@ class AuthenticationResult
   {
     return $this->metadata;
   }
+
+  public function getError(): ?string
+  {
+    return $this->errorMessage;
+  }
 }

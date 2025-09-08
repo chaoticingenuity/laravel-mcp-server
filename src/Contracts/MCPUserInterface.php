@@ -39,14 +39,4 @@ interface MCPUserInterface
    * Get the user's field access configuration
    */
   public function getMCPFieldAccess(): array;
-
-  /**
-   * Get the primary key value for this user
-   */
-  public function getKey(): mixed;
-
-  /**
-   * Get the primary key name for this user
-   */
-  public function getKeyName(): string;
 }

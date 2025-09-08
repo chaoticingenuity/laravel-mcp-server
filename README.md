@@ -17,6 +17,12 @@ A Laravel package that implements the Model Context Protocol (MCP) server specif
 - ✅ Laravel 10+ and 11+ support
 - ✅ Comprehensive test suite
 - ✅ Auto-discovery of tools and resources
+- ✅ **NEW**: Advanced permission resolution system with custom resolvers
+- ✅ **NEW**: Enhanced field-level security with data filtering
+- ✅ **NEW**: API key audit logging and usage tracking
+- ✅ **NEW**: Per-key rate limiting with burst protection
+- ✅ **NEW**: Security enhancements (key rotation, scope-based permissions)
+- ✅ **NEW**: Performance monitoring and metrics tracking
 
 ## Installation
 
@@ -122,9 +128,16 @@ MCP_ALLOWED_IPS=192.168.1.0/24
 MCP_RATE_LIMIT=100
 MCP_BURST_LIMIT=20
 
-# Logging
+# Logging & Monitoring
 MCP_LOG_REQUESTS=true
 MCP_LOG_PERFORMANCE=true
+MCP_LOG_API_USAGE=false
+MCP_TRACK_PERMISSIONS=false
+
+# Performance
+MCP_AUTH_CACHE_DURATION=300
+MCP_CACHE_PERMISSION_RESULTS=true
+MCP_PERMISSION_CACHE_TTL=300
 ```
 
 ### 5. Configure Authentication
@@ -176,6 +189,7 @@ class User extends Authenticatable implements MCPUserInterface
         'mcp_permissions' => 'array',
         'mcp_field_access' => 'array',
         'mcp_tokens' => 'array',
+        'mcp_scopes' => 'array', // NEW: Scope-based permissions
     ];
 
     // Optional: Customize permissions based on user roles
@@ -201,12 +215,16 @@ class User extends Authenticatable implements MCPUserInterface
 2. **Run migrations:**
 
 ```bash
-# Publish and run API keys migration
-php artisan vendor:publish --tag=mcp-migrations
+# Option A: For API key-based authentication (includes both api_keys table and users table fields)
+php artisan vendor:publish --tag=mcp-migrations-api-keys
 php artisan migrate
 
-# Add MCP fields to users table
-php artisan make:migration add_mcp_fields_to_users_table
+# Option B: For Bouncer integration (enables MCP for existing Bouncer users)
+php artisan vendor:publish --tag=mcp-migrations-bouncer
+php artisan migrate
+
+# Option C: Custom implementation (no migrations needed - implement custom storage in your User model)
+# See examples in documentation for user table columns, JSON storage, etc.
 ```
 
 ```php
@@ -218,6 +236,7 @@ public function up(): void
         $table->json('mcp_permissions')->nullable();
         $table->json('mcp_field_access')->nullable();
         $table->json('mcp_tokens')->nullable();
+        $table->json('mcp_scopes')->nullable(); // NEW: Scope-based permissions
         
         $table->index('mcp_enabled');
     });
@@ -264,6 +283,144 @@ php artisan route:show mcp.handle
 
 # Clear cache if needed
 php artisan optimize:clear
+```
+
+## Advanced Features (v1.1.0+)
+
+### Permission Resolution System
+
+The package now includes a flexible permission resolution system that allows custom permission logic:
+
+```php
+// Create custom permission resolvers
+class OrganizationPermissionResolver implements PermissionResolverInterface
+{
+    public function resolveUserPermissions($user): array
+    {
+        // Custom logic based on organization membership
+        $orgPermissions = $user->organization->mcp_permissions ?? [];
+        $userPermissions = $user->mcp_permissions ?? [];
+        
+        return array_merge($orgPermissions, $userPermissions);
+    }
+    
+    public function resolveUserFieldAccess($user): array
+    {
+        // Dynamic field access based on user tier
+        return match($user->subscription_tier) {
+            'premium' => ['*'],
+            'standard' => ['name', 'price', 'description'],
+            'basic' => ['name', 'price'],
+            default => []
+        };
+    }
+    
+    public function canResolve($user): bool
+    {
+        return $user->organization !== null;
+    }
+    
+    public function getPriority(): int
+    {
+        return 50; // Medium priority
+    }
+}
+
+// Register in config/mcp.php
+'auth' => [
+    'custom_permission_resolvers' => [
+        \App\Services\MCP\OrganizationPermissionResolver::class,
+    ],
+],
+```
+
+### Enhanced API Key Management
+
+Advanced API key features with audit logging and per-key rate limiting:
+
+```php
+// Generate API key with specific rate limits and scopes
+$apiKey = $user->generateMCPApiKey('mobile_app', ['tools.search'], 'Mobile App Key');
+
+// Set per-key rate limits
+$apiKey->update([
+    'rate_limit_per_minute' => 500,
+    'rate_limit_burst' => 50
+]);
+
+// Track usage automatically
+$keyWithTracking = $user->getMCPApiKeyWithTracking($keyValue);
+
+// Rotate keys securely
+$newKey = $user->rotateMCPApiKey($oldKeyValue);
+
+// Get detailed usage analytics
+$analytics = $user->getMCPApiKeysSummary();
+// Returns: total_keys, active_keys, expired_keys, usage_stats
+```
+
+### Scope-Based Permissions
+
+Implement fine-grained access control with scopes:
+
+```php
+// Add scopes to users
+$user->addMCPScope('read:products');
+$user->addMCPScope('write:orders');
+
+// Check scopes in tools/resources
+public function isAccessibleTo(ContextInterface $context): bool
+{
+    return $context->hasScope('read:products') || 
+           $context->hasPermission('admin');
+}
+
+// Configure scope-based client permissions
+'clients' => [
+    'mobile_app' => [
+        'permissions' => ['tools.*'],
+        'scopes' => ['read:products', 'read:categories'],
+        'metadata' => ['app_version' => '2.1.0']
+    ]
+]
+```
+
+### Data Filtering & Field Security
+
+Automatically filter response data based on field access permissions:
+
+```php
+public function execute(array $arguments, ContextInterface $context): ResultInterface
+{
+    $products = Product::all()->toArray();
+    
+    // Automatically filter fields based on user permissions
+    $filteredProducts = array_map(function($product) use ($context) {
+        return $context->filterFields('product', $product);
+    }, $products);
+    
+    return Result::success([
+        'products' => $filteredProducts,
+        'accessible_fields' => $context->getAccessibleFields('product')
+    ]);
+}
+```
+
+### Performance Monitoring & Analytics
+
+Built-in performance tracking and usage analytics:
+
+```php
+// Enable in .env
+MCP_TRACK_PERMISSIONS=true
+MCP_LOG_API_USAGE=true
+
+// Access metrics via Cache
+$permissionStats = Cache::get('mcp.perms.tools.search_products.granted', 0);
+$deniedAttempts = Cache::get('mcp.perms.tools.search_products.denied', 0);
+
+// View API usage logs
+tail -f storage/logs/mcp.log | grep "API Key Usage"
 ```
 
 ## Authentication Methods
@@ -879,7 +1036,84 @@ MCP_BURST_LIMIT=10       # Short-term burst allowance
 ]
 ```
 
+## What's New in v1.0.0 🎉
+
+### Enhanced Permission Management
+- **🔗 Optional Bouncer Integration**: Seamlessly integrate with Laravel Bouncer for advanced role-based permissions
+- **🔄 Permission Manager Architecture**: Pluggable permission system with automatic fallback
+- **⚡ Performance Optimizations**: Registry template matching with compiled pattern caching
+- **🛡️ Enhanced Security**: Improved authentication flow and circular dependency prevention
+
+### New Features
+- **🚀 MCP Setup Command**: `php artisan mcp:setup --bouncer` for easy configuration
+- **📊 Comprehensive Test Suite**: 74 tests covering all major functionality
+- **🎛️ Flexible Authentication**: Multiple storage patterns for API keys (database, user columns, JSON)
+- **📝 Better Documentation**: Enhanced examples, troubleshooting guides, and migration instructions
+
+### Developer Experience
+- **✨ PSR-12 Compliance**: Full code formatting standards with .editorconfig
+- **🔧 Auto-Detection**: Automatic Bouncer package detection and configuration
+- **📚 Rich Examples**: Comprehensive examples for both basic and Bouncer usage
+- **🐛 Improved Error Handling**: Better validation and error messages
+
+## Quick Setup with Bouncer (Optional)
+
+If you want enhanced permission management with Laravel Bouncer:
+
+```bash
+# Install Bouncer (optional)
+composer require silber/bouncer
+
+# Setup MCP with Bouncer integration
+php artisan mcp:setup --bouncer
+
+# Enable Bouncer in your .env
+MCP_BOUNCER_ENABLED=true
+```
+
 ## Testing
+
+### Comprehensive Test Suite (v1.0.0)
+
+The package includes **74 comprehensive tests** covering:
+
+- ✅ **Core MCP Protocol**: Initialize, tools/list, tools/call, resources/*
+- ✅ **Authentication**: API keys, Basic auth, Bearer tokens, custom authenticators  
+- ✅ **Permission Management**: Default and Bouncer permission managers
+- ✅ **Bouncer Integration**: Package detection, fallback behavior, configuration
+- ✅ **Registry Performance**: Template matching, caching, memory optimization
+- ✅ **Security**: Access control, rate limiting, validation
+- ✅ **HTTP Integration**: Middleware, routing, error handling
+
+### Running Tests
+
+```bash
+# Run all tests
+composer test
+
+# Run specific test suites
+vendor/bin/phpunit tests/Feature/
+vendor/bin/phpunit tests/Unit/
+
+# Run with coverage
+composer test-coverage
+
+# Individual test files
+vendor/bin/phpunit tests/Feature/MCPServerTest.php
+vendor/bin/phpunit tests/Feature/AuthenticationTest.php
+vendor/bin/phpunit tests/Unit/PermissionManagerTest.php
+vendor/bin/phpunit tests/Feature/BouncerIntegrationTest.php
+vendor/bin/phpunit tests/Unit/RegistryTest.php
+```
+
+### Performance Benchmarks
+
+The v1.0.0 test suite includes performance validation:
+
+- **Template URI Matching**: 1000 matches complete in <100ms
+- **Memory Usage**: 1000 tool/resource registrations use <5MB  
+- **Authentication**: Cached permission lookups for optimal performance
+- **Registry**: Compiled pattern caching for repeated template matches
 
 ### Running Package Tests
 
@@ -971,6 +1205,21 @@ The package provides standardized JSON-RPC 2.0 error responses:
 | `-32003` | Rate limit exceeded | Too many requests |
 | `-32602` | Invalid params | Missing/invalid parameters |
 | `-32603` | Internal error | Server-side errors |
+
+### Exception Types
+
+The package uses specific exception types for better error handling:
+
+- **`MCPAuthenticationException`**: Thrown for authentication failures, invalid client IDs, or authorization issues
+- **Client ID Validation**: Client IDs must be alphanumeric with dots, hyphens, or underscores only (max 255 chars)
+
+### Input Validation
+
+Client IDs are automatically validated and must meet these requirements:
+- Non-empty
+- Maximum 255 characters
+- Only alphanumeric characters, dots (.), hyphens (-), and underscores (_)
+- Invalid characters will throw `MCPAuthenticationException`
 
 Example error response:
 ```json
@@ -1290,10 +1539,38 @@ php artisan tinker
 >>> $user->isMCPApiKeyValid($key->key)
 ```
 
+**Client ID Validation Errors**
+```bash
+# MCPAuthenticationException: Invalid client ID format
+# Client IDs must be alphanumeric with dots, hyphens, or underscores only
+
+# Valid client IDs:
+# ✅ "mobile_app"
+# ✅ "api-client"  
+# ✅ "client.v1"
+# ❌ "client@domain"
+# ❌ "client/path"
+# ❌ "client with spaces"
+
+# Test client ID validation
+php artisan tinker
+>>> app(\ChaoticIngenuity\LaravelMCP\Core\ContextFactory::class)->createFromClient('test-client')
+```
+
+**Field Access Issues**
+```bash
+# Field access permissions are now working correctly (v1.0.0 bug fix)
+# Test field access in tinker
+php artisan tinker
+>>> $user = User::find(1)
+>>> $user->hasMCPFieldAccess('product', 'price')
+>>> $user->getMCPFieldAccess()
+```
+
 **Access Denied Errors**
 ```bash
 # Check client permissions in config/mcp.php
-php artisan config:show mcp.clients
+php artisan config:show mcp.auth.clients
 
 # Verify field-level access configuration
 php artisan tinker

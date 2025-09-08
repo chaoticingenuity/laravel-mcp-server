@@ -35,8 +35,13 @@ class BouncerPermissionManager implements PermissionManagerInterface
       return;
     }
 
+    if (!$this->isBouncerAvailable()) {
+      // Graceful degradation when Bouncer is not available
+      return;
+    }
+
     // Use Bouncer's built-in caching
-    \Bouncer::refresh();
+    \Silber\Bouncer\BouncerFacade::refresh();
   }
 
   private function isBouncerAvailable(): bool

@@ -66,12 +66,14 @@ class Registry
   private function matchesTemplate(string $template, string $uri): bool
   {
     if (!isset(self::$compiledPatterns[$template])) {
-      $pattern = preg_quote($template, '/');
-      $pattern = str_replace('\\{[^}]+\\}', '([^/]+)', $pattern);
+      // Simple approach: replace placeholders with regex pattern
+      $pattern = str_replace('/', '\\/', $template); // Escape forward slashes
+      $pattern = preg_replace('/\{[^}]+\}/', '([^\/]+)', $pattern); // Replace {param} with ([^/]+)
       self::$compiledPatterns[$template] = "/^{$pattern}$/";
     }
 
-    return preg_match(self::$compiledPatterns[$template], $uri) === 1;
+    $result = preg_match(self::$compiledPatterns[$template], $uri);
+    return $result === 1;
   }
 
   private function autoRegister(): void
