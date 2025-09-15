@@ -78,37 +78,59 @@ class Registry
 
   private function autoRegister(): void
   {
-    // Register core tools and resources
-    $this->registerCoreTools();
-    $this->registerCoreResources();
+    // Register core components only if enabled
+    if (config('mcp.package.auto_register_core_components', true)) {
+      $this->registerCoreTools();
+      $this->registerCoreResources();
+    }
 
-    // Register custom tools and resources from config
+    // Always register custom tools and resources from config
     $this->registerCustomTools();
     $this->registerCustomResources();
   }
 
   private function registerCoreTools(): void
   {
-    $coreTools = [
+    // Use configurable core tools
+    $coreTools = config('mcp.package.core_tools', [
       \ChaoticIngenuity\LaravelMCP\Tools\EchoTool::class,
-    ];
+    ]);
 
     foreach ($coreTools as $toolClass) {
       if (class_exists($toolClass)) {
-        $this->registerTool(app($toolClass));
+        $tool = app($toolClass);
+
+        // TODO: Remove in v2.0.0 - Legacy individual tool enablement (prefer core_tools array)
+        // Check individual tool enablement for backward compatibility
+        if ($toolClass === \ChaoticIngenuity\LaravelMCP\Tools\EchoTool::class
+            && !config('mcp.package.enable_echo_tool', true)) {
+          continue;
+        }
+
+        $this->registerTool($tool);
       }
     }
   }
 
   private function registerCoreResources(): void
   {
-    $coreResources = [
+    // Use configurable core resources
+    $coreResources = config('mcp.package.core_resources', [
       \ChaoticIngenuity\LaravelMCP\Resources\StatusResource::class,
-    ];
+    ]);
 
     foreach ($coreResources as $resourceClass) {
       if (class_exists($resourceClass)) {
-        $this->registerResource(app($resourceClass));
+        $resource = app($resourceClass);
+
+        // TODO: Remove in v2.0.0 - Legacy individual resource enablement (prefer core_resources array)
+        // Check individual resource enablement for backward compatibility
+        if ($resourceClass === \ChaoticIngenuity\LaravelMCP\Resources\StatusResource::class
+            && !config('mcp.package.enable_status_resource', true)) {
+          continue;
+        }
+
+        $this->registerResource($resource);
       }
     }
   }

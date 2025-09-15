@@ -2,7 +2,7 @@
 
 namespace ChaoticIngenuity\LaravelMCP\Core;
 
-use ChaoticIngenuity\LaravelMCP\Contracts\ContextInterface;
+use ChaoticIngenuity\LaravelMCP\Contracts\{ContextInterface, FieldSetResolverInterface};
 
 class Context implements ContextInterface
 {
@@ -141,6 +141,67 @@ class Context implements ContextInterface
         "mcp.perms.{$permission}." . ($granted ? 'granted' : 'denied')
       );
     }
+  }
+
+  /**
+   * Get accessible fields for a specific resource instance using relationship-based access
+   */
+  public function getAccessibleFieldsForResource(string $resourceType, string $resourceId, FieldSetResolverInterface $resolver): array
+  {
+    if ($this->hasPermission('admin')) {
+      return ['*'];
+    }
+
+    // Get matched relationships
+    $matchedRelationships = $this->getMatchedRelationships($resourceType, $resourceId, $resolver->getRelationships());
+    
+    // Resolve field set using resolver
+    $fields = $resolver->resolveFieldSet($resourceType, $matchedRelationships);
+    
+    // Merge with existing static field access for backward compatibility
+    $staticFields = $this->getAccessibleFields($resourceType);
+    if (in_array('*', $staticFields)) {
+      return ['*'];
+    }
+    
+    return array_unique(array_merge($staticFields, $fields));
+  }
+
+  /**
+   * Check if user has access to a specific field for a specific resource instance
+   */
+  public function hasFieldAccessForResource(string $resourceType, string $resourceId, string $field, FieldSetResolverInterface $resolver): bool
+  {
+    $accessibleFields = $this->getAccessibleFieldsForResource($resourceType, $resourceId, $resolver);
+    
+    return in_array('*', $accessibleFields) || in_array($field, $accessibleFields);
+  }
+
+  /**
+   * Get user ID from metadata (helper method for relationship checking)
+   */
+  public function getUserId(): ?string
+  {
+    return $this->metadata['user_id'] ?? null;
+  }
+
+  /**
+   * Get relationships that match for the current context and resource
+   */
+  private function getMatchedRelationships(string $resourceType, string $resourceId, array $relationships): array
+  {
+    $matched = [];
+    
+    foreach ($relationships as $relationship) {
+      if ($relationship->matches($this, $resourceType, $resourceId)) {
+        $matched[] = $relationship;
+      }
+    }
+    
+    // Sort by priority (descending)
+    usort($matched, fn($a, $b) => $b->getPriority() <=> $a->getPriority());
+    
+    return $matched;
   }
 
   /**

@@ -25,7 +25,7 @@ abstract class TestCase extends Orchestra
         
         // Set up MCP configuration for tests
         config()->set('mcp.server.name', 'Laravel MCP Server');
-        config()->set('mcp.server.version', '1.0.0');
+        config()->set('mcp.server.version', '1.1.0');
         config()->set('mcp.routes.enabled', true);
         config()->set('mcp.routes.prefix', 'api');
         

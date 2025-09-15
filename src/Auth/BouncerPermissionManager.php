@@ -12,8 +12,30 @@ class BouncerPermissionManager implements PermissionManagerInterface
       throw new \RuntimeException('Bouncer package is required but not installed');
     }
 
+
+    // First check the exact ability
     $prefixedAbility = $this->getPrefixedAbility($ability);
-    return $user->can($prefixedAbility);
+    if ($user->can($prefixedAbility)) {
+      return true;
+    }
+
+    // Check wildcard permissions
+    $abilityParts = explode('.', $ability);
+    for ($i = count($abilityParts) - 1; $i >= 0; $i--) {
+      $wildcardAbility = $this->getPrefixedAbility(
+        implode('.', array_slice($abilityParts, 0, $i)) . '.*'
+      );
+      if ($user->can($wildcardAbility)) {
+        return true;
+      }
+    }
+
+    // Check for global MCP wildcard
+    if ($user->can($this->getPrefix() . '*')) {
+      return true;
+    }
+
+    return false;
   }
 
   public function getUserAbilities($user): array
@@ -46,7 +68,17 @@ class BouncerPermissionManager implements PermissionManagerInterface
 
   private function isBouncerAvailable(): bool
   {
-    return class_exists(\Silber\Bouncer\BouncerFacade::class);
+    if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+      return false;
+    }
+
+    try {
+      // Try to access Bouncer facade to ensure it's properly bootstrapped
+      \Silber\Bouncer\BouncerFacade::getFacadeRoot();
+      return true;
+    } catch (\Exception $e) {
+      return false;
+    }
   }
 
   private function getPrefixedAbility(string $ability): string

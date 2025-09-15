@@ -19,6 +19,7 @@ A Laravel package that implements the Model Context Protocol (MCP) server specif
 - ✅ Auto-discovery of tools and resources
 - ✅ **NEW**: Advanced permission resolution system with custom resolvers
 - ✅ **NEW**: Enhanced field-level security with data filtering
+- ✅ **NEW**: Resource relationship field access (contextual field permissions)
 - ✅ **NEW**: API key audit logging and usage tracking
 - ✅ **NEW**: Per-key rate limiting with burst protection
 - ✅ **NEW**: Security enhancements (key rotation, scope-based permissions)
@@ -978,6 +979,88 @@ Control which fields clients can access at a granular level:
 ]
 ```
 
+### Resource Relationship Field Access
+
+**NEW in v1.1+**: Advanced field access control based on user relationships to specific resource instances. Perfect for scenarios where field access depends on ownership, team membership, or other contextual relationships.
+
+```php
+// Example: Real estate listings with different field access levels
+class ListingFieldSetResolver extends BaseFieldSetResolver
+{
+    public function __construct()
+    {
+        $config = [
+            'base_fields' => [
+                // IDX fields - always accessible
+                'mls_id', 'address', 'price', 'bedrooms', 'bathrooms'
+            ],
+            'relationships' => [
+                'owner' => [
+                    'additional_fields' => [
+                        // Private agent fields - only for owned listings
+                        'commission_rate', 'private_notes', 'client_info'
+                    ]
+                ],
+                'team_member' => [
+                    'additional_fields' => [
+                        // Team shared fields
+                        'team_notes', 'internal_status'
+                    ]
+                ]
+            ],
+            'merge_strategy' => 'union'
+        ];
+
+        $relationships = [
+            new DatabaseOwnershipRelationship('listings', 'agent_id'),
+            new TeamMembershipRelationship()
+        ];
+
+        parent::__construct($config, $relationships);
+    }
+}
+
+// Usage in resources
+class ListingResource implements ResourceInterface
+{
+    public function getContent(string $uri, ContextInterface $context): ResultInterface
+    {
+        $listingId = $this->extractIdFromUri($uri);
+        
+        // Get accessible fields for this specific listing and user
+        $accessibleFields = $context->getAccessibleFieldsForResource(
+            'listing', 
+            $listingId, 
+            new ListingFieldSetResolver()
+        );
+        
+        // Filter data based on relationship-based field access
+        $listing = Listing::find($listingId);
+        $data = $this->filterFieldsByAccess($listing->toArray(), $accessibleFields);
+        
+        return Result::success($data);
+    }
+}
+```
+
+**Key Features:**
+
+- **Dynamic Field Access**: Different fields based on user's relationship to each resource
+- **Multiple Relationships**: Users can have multiple relationships (owner + team member + premium subscriber)
+- **Merge Strategies**: Union, intersection, or override for combining field sets
+- **Custom Logic**: Implement any relationship checking logic (database queries, API calls, etc.)
+- **Performance Optimized**: Built-in caching and efficient relationship checking
+- **Backward Compatible**: Works alongside existing static field access
+
+**Common Use Cases:**
+
+- **Real Estate**: IDX fields for all listings, private fields for owned listings
+- **Project Management**: Basic project info for all, sensitive data for assigned projects  
+- **E-commerce**: Product info for all, financial data for managed products
+- **CRM**: Contact basics for all, detailed info for assigned contacts
+
+See the [complete documentation](docs/RESOURCE_RELATIONSHIP_FIELD_ACCESS.md) for implementation guide and examples.
+
 ### Middleware Stack
 
 The package includes comprehensive security middleware:
@@ -1056,9 +1139,11 @@ MCP_BURST_LIMIT=10       # Short-term burst allowance
 - **📚 Rich Examples**: Comprehensive examples for both basic and Bouncer usage
 - **🐛 Improved Error Handling**: Better validation and error messages
 
-## Quick Setup with Bouncer (Optional)
+## Bouncer Integration (Optional)
 
-If you want enhanced permission management with Laravel Bouncer:
+For advanced role-based permission management with [Laravel Bouncer](https://github.com/JosephSilber/bouncer):
+
+### Quick Setup
 
 ```bash
 # Install Bouncer (optional)
@@ -1070,6 +1155,73 @@ php artisan mcp:setup --bouncer
 # Enable Bouncer in your .env
 MCP_BOUNCER_ENABLED=true
 ```
+
+### Permission Management
+
+Use standard Bouncer patterns for transparent, auditable permissions:
+
+```php
+use Silber\Bouncer\BouncerFacade as Bouncer;
+
+// Grant role-based permissions (recommended)
+Bouncer::allow('admin')->to('mcp.*');           // Full access
+Bouncer::allow('developer')->to('mcp.tools.*'); // All tools
+Bouncer::allow('api-user')->to('mcp.tools.echo'); // Specific tool
+
+// Assign roles to users
+Bouncer::assign('developer')->to($user);
+
+// Field-level access control
+Bouncer::allow($role)->to('access-fields.user.email');
+Bouncer::allow($role)->to('access-fields.product.*');
+```
+
+### Why This Approach?
+
+- **🔍 Transparent**: All permissions in Bouncer's database tables
+- **📋 Auditable**: Full permission history and tracking
+- **🔒 Secure**: No configuration-based shortcuts or backdoors
+- **📚 Standard**: Uses Bouncer exactly as designed
+
+**📖 [Complete Bouncer Integration Guide →](docs/BOUNCER_INTEGRATION.md)**
+
+## Advanced Features
+
+### Maximum Configurability
+
+Laravel MCP Server follows the principle of **"Capabilities, Not Enforcement"**:
+
+- **🔧 Override Any Component** - Replace core services, tools, resources, or middleware
+- **⚙️ Flexible Configuration** - Disable features, customize behavior, or remove validation
+- **🎯 Minimal Footprint** - Enable only what you need for optimal performance
+
+```php
+// Example: Complete customization
+'services' => [
+    'registry_class' => \App\Services\CustomRegistry::class,
+    'permission_manager_class' => \App\Auth\CustomPermissionManager::class,
+],
+
+'package' => [
+    'auto_register_core_components' => false, // Disable auto-registration
+    'core_tools' => [\App\Tools\MyCustomTool::class], // Use custom tools only
+],
+
+'validation' => [
+    'strict_config_validation' => false, // Remove package requirements
+],
+```
+
+### Enterprise Features
+
+- **🏢 Multi-Authentication** - API keys, bearer tokens, basic auth, custom authenticators
+- **🛡️ Advanced Security** - HTTPS enforcement, IP allowlisting, rate limiting
+- **📊 Monitoring & Logging** - Request tracking, performance monitoring, audit trails
+- **🚀 Performance** - Caching, lazy loading, singleton services
+- **🔄 High Availability** - Stateless design, load balancer compatible
+
+**📚 [Advanced Customization Guide →](docs/ADVANCED_CUSTOMIZATION.md)**
+**📋 [Complete Feature Coverage →](docs/FEATURE_COVERAGE.md)**
 
 ## Testing
 

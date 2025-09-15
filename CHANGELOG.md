@@ -5,6 +5,54 @@ All notable changes to Laravel MCP Server will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-15
+
+### 🚀 New Features
+
+#### Maximum Configurability & Customization
+- **🔧 Service Container Overrides**: Replace any core service (Registry, Context, PermissionManager) with custom implementations
+- **⚙️ Configuration Validation Controls**: Disable package validation requirements (`MCP_STRICT_CONFIG_VALIDATION=false`)
+- **🎯 Core Component Arrays**: New `core_tools` and `core_resources` config arrays for maximum flexibility
+- **📦 Minimal Footprint Options**: Disable auto-registration (`MCP_AUTO_REGISTER_CORE=false`) for custom-only setups
+- **🚀 Enterprise Features**: Advanced security, monitoring, performance optimization, and high availability features
+
+#### Resource Relationship Field Access
+- **🎯 Contextual field permissions**: Field access now supports user relationships to specific resource instances
+- **🔄 Dynamic field resolution**: Different fields accessible based on ownership, team membership, subscription tiers, etc.
+- **📋 Multiple merge strategies**: Union, intersection, and override strategies for combining field sets
+- **⚡ Performance optimized**: Efficient relationship checking with built-in caching support
+- **🔧 Fully customizable**: Interface-based architecture allows any relationship logic implementation
+- **🔄 Backward compatible**: Works alongside existing static field access system
+
+#### Core Components Added
+- `ResourceRelationshipInterface` - Define custom relationship logic
+- `FieldSetResolverInterface` - Control field resolution strategies  
+- `BaseFieldSetResolver` - Built-in resolver with common functionality
+- Enhanced `ContextInterface` with resource-specific field access methods
+
+#### Documentation & Examples
+- Comprehensive implementation guide with real-world examples
+- Example relationships: database ownership, team membership, subscription tiers
+- Performance considerations and caching strategies
+- Complete test coverage (11+ test scenarios)
+
+### ✨ Enhancements
+- Enhanced `Context` class with resource-relationship field access methods
+- Extended test suite with comprehensive resource relationship field access tests
+- Added example implementations for common use cases
+
+### ⚠️ Deprecations
+- **Individual Component Flags**: `enable_echo_tool` and `enable_status_resource` config flags are deprecated in favor of `core_tools` and `core_resources` arrays
+- **Migration Path**: Both methods work in v1.x for backward compatibility, but individual flags will be removed in v2.0
+- **Recommended Action**: Update configuration to use the new array-based approach for more flexibility
+
+### 📚 Documentation
+- Added [Advanced Customization Guide](docs/ADVANCED_CUSTOMIZATION.md) - Complete guide to maximum configurability
+- Added [Feature Coverage Documentation](docs/FEATURE_COVERAGE.md) - Comprehensive overview of all 100+ features
+- Added [Resource Relationship Field Access Guide](docs/RESOURCE_RELATIONSHIP_FIELD_ACCESS.md)
+- Enhanced README with "Advanced Features" section highlighting configurability philosophy
+- Updated examples directory with practical implementations
+
 ## [1.0.0] - 2025-09-05
 
 ### 🎉 Initial Release

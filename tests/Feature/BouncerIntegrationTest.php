@@ -11,6 +11,17 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class BouncerIntegrationTest extends TestCase
 {
+    protected function getPackageProviders($app): array
+    {
+        $providers = parent::getPackageProviders($app);
+
+        if (class_exists(\Silber\Bouncer\BouncerServiceProvider::class)) {
+            $providers[] = \Silber\Bouncer\BouncerServiceProvider::class;
+        }
+
+        return $providers;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,6 +39,47 @@ class BouncerIntegrationTest extends TestCase
                 'metadata' => ['tier' => 'bouncer']
             ]
         ]);
+
+        // Set up Bouncer database if available
+        if (class_exists(\Silber\Bouncer\BouncerServiceProvider::class)) {
+            $this->setupBouncerDatabase();
+        }
+    }
+
+    protected function setupBouncerDatabase(): void
+    {
+        $this->artisan('migrate', ['--database' => 'testing']);
+
+        // Create Bouncer tables manually since we can't run bouncer:install in tests
+        $this->createBouncerTables();
+    }
+
+    protected function createBouncerTables(): void
+    {
+        if (!$this->app['db']->getSchemaBuilder()->hasTable('abilities')) {
+            $this->app['db']->getSchemaBuilder()->create('abilities', function ($table) {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->string('title')->nullable();
+                $table->bigInteger('entity_id')->unsigned()->nullable();
+                $table->string('entity_type')->nullable();
+                $table->boolean('only_owned')->default(false);
+                $table->json('options')->nullable();
+                $table->integer('scope')->nullable()->index();
+                $table->timestamps();
+            });
+        }
+
+        if (!$this->app['db']->getSchemaBuilder()->hasTable('roles')) {
+            $this->app['db']->getSchemaBuilder()->create('roles', function ($table) {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->string('title')->nullable();
+                $table->integer('level')->unsigned()->nullable();
+                $table->integer('scope')->nullable()->index();
+                $table->timestamps();
+            });
+        }
     }
 
     /** @test */

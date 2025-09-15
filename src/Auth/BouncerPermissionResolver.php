@@ -25,23 +25,34 @@ class BouncerPermissionResolver implements PermissionResolverInterface
             return [];
         }
 
-        // Get field access from user abilities with 'field.' prefix
-        $fieldAbilities = $user->getAbilities()
-            ->filter(fn($ability) => str_starts_with($ability->name, $this->getPrefix() . 'field.'))
-            ->map(fn($ability) => str_replace($this->getPrefix() . 'field.', '', $ability->name));
-
+        // Get all abilities that match field access patterns
+        $abilities = $user->getAbilities()->pluck('name');
         $fieldAccess = [];
-        foreach ($fieldAbilities as $fieldAbility) {
-            // Parse abilities like "users.name", "posts.*", etc.
-            $parts = explode('.', $fieldAbility);
-            if (count($parts) >= 2) {
-                $entityType = $parts[0];
-                $field = implode('.', array_slice($parts, 1));
-                
+
+        foreach ($abilities as $abilityName) {
+            // Parse abilities like "access-fields.user.profile.*" or "view-field.product.metadata.tags"
+            if (preg_match('/^(?:access-fields|view-field)\.([^.]+)\.(.+)$/', $abilityName, $matches)) {
+                $entityType = $matches[1];
+                $field = $matches[2];
+
                 if (!isset($fieldAccess[$entityType])) {
                     $fieldAccess[$entityType] = [];
                 }
                 $fieldAccess[$entityType][] = $field;
+            }
+            // Also handle MCP prefixed field abilities
+            elseif (str_starts_with($abilityName, $this->getPrefix() . 'field.')) {
+                $fieldAbility = str_replace($this->getPrefix() . 'field.', '', $abilityName);
+                $parts = explode('.', $fieldAbility);
+                if (count($parts) >= 2) {
+                    $entityType = $parts[0];
+                    $field = implode('.', array_slice($parts, 1));
+
+                    if (!isset($fieldAccess[$entityType])) {
+                        $fieldAccess[$entityType] = [];
+                    }
+                    $fieldAccess[$entityType][] = $field;
+                }
             }
         }
 

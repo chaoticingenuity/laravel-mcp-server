@@ -8,7 +8,7 @@ return [
      */
     'server' => [
         'name' => env('MCP_SERVER_NAME', 'Laravel MCP Server'),
-        'version' => env('MCP_SERVER_VERSION', '1.0.0'),
+        'version' => env('MCP_SERVER_VERSION', '1.1.0'),
     ],
 
     /**
@@ -108,8 +108,25 @@ return [
      * |--------------------------------------------------------------------------
      */
     'package' => [
+        // Legacy component flags (DEPRECATED - use core_tools/core_resources arrays instead)
+        // Will be removed in v2.0.0
         'enable_echo_tool' => env('MCP_ENABLE_ECHO_TOOL', true),
         'enable_status_resource' => env('MCP_ENABLE_STATUS_RESOURCE', true),
+
+        // Auto-registration behavior
+        'auto_register_core_components' => env('MCP_AUTO_REGISTER_CORE', true),
+
+        // Core tool classes (preferred method - override/extend as needed)
+        // Remove tools from array to disable, add custom tools to enable
+        'core_tools' => [
+            \ChaoticIngenuity\LaravelMCP\Tools\EchoTool::class,
+        ],
+
+        // Core resource classes (preferred method - override/extend as needed)
+        // Remove resources from array to disable, add custom resources to enable
+        'core_resources' => [
+            \ChaoticIngenuity\LaravelMCP\Resources\StatusResource::class,
+        ],
     ],
 
     /**
@@ -184,5 +201,33 @@ return [
         'expose_system_info' => env('MCP_DEBUG_EXPOSE_SYSTEM_INFO', false),
         'detailed_error_messages' => env('MCP_DEBUG_DETAILED_ERRORS', false),
         'log_all_requests' => env('MCP_DEBUG_LOG_REQUESTS', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Service Container Configuration
+    |--------------------------------------------------------------------------
+    */
+    'services' => [
+        // Custom service implementations (leave null for defaults)
+        'registry_class' => null, // \App\Services\Custom\MCP\CustomRegistry::class,
+        'context_class' => null,  // \App\Services\Custom\MCP\CustomContext::class,
+        'permission_manager_class' => null, // Override default permission manager
+        'authenticator_manager_class' => null, // Override authenticator manager
+
+        // Service binding behavior
+        'singleton_services' => true, // Whether to bind services as singletons
+        'lazy_load_services' => false, // Whether to defer service loading
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation Configuration
+    |--------------------------------------------------------------------------
+    */
+    'validation' => [
+        'strict_config_validation' => env('MCP_STRICT_CONFIG_VALIDATION', true),
+        'require_server_info' => env('MCP_REQUIRE_SERVER_INFO', true),
+        'validate_bouncer_setup' => env('MCP_VALIDATE_BOUNCER_SETUP', true),
     ],
 ];

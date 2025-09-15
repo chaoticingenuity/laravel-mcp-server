@@ -91,33 +91,52 @@ class MCPServiceProvider extends ServiceProvider
     }
     private function validateConfiguration()
     {
-        $requiredConfigs = [
-            'mcp.server.name',
-            'mcp.server.version',
-            // 'mcp.auth.api_keys',
-        ];
+        // Skip validation if not in strict mode
+        if (!config('mcp.validation.strict_config_validation', true)) {
+            return;
+        }
+
+        $requiredConfigs = [];
+
+        // Only require server info if specifically enabled
+        if (config('mcp.validation.require_server_info', true)) {
+            $requiredConfigs = array_merge($requiredConfigs, [
+                'mcp.server.name',
+                'mcp.server.version',
+            ]);
+        }
 
         foreach ($requiredConfigs as $config) {
             if (empty(config($config))) {
-                throw new \RuntimeException("Required MCP configuration missing: {$config}");
+                throw new \RuntimeException("Required MCP configuration missing: {$config}. Disable with MCP_STRICT_CONFIG_VALIDATION=false");
             }
         }
     }
     private function validateBouncerConfiguration()
     {
+        // Skip bouncer validation if disabled
+        if (!config('mcp.validation.validate_bouncer_setup', true)) {
+            return;
+        }
+
         if (config('mcp.auth.bouncer.enabled', false)) {
             if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
                 throw new \RuntimeException(
                     'MCP Bouncer integration is enabled but Bouncer package is not installed. ' .
-                    'Run: composer require silber/bouncer'
+                    'Run: composer require silber/bouncer ' .
+                    'Or disable validation with MCP_VALIDATE_BOUNCER_SETUP=false'
                 );
             }
         }
     }
     private function registerCoreServices(): void
     {
-        $this->app->singleton(Registry::class, function ($app) {
-            return new Registry();
+        // Registry service - configurable implementation
+        $registryClass = config('mcp.services.registry_class') ?: Registry::class;
+        $bindingMethod = config('mcp.services.singleton_services', true) ? 'singleton' : 'bind';
+
+        $this->app->$bindingMethod(Registry::class, function ($app) use ($registryClass) {
+            return new $registryClass();
         });
 
         $this->app->singleton(ContextFactory::class, function ($app) {

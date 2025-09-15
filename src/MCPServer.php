@@ -49,7 +49,7 @@ class MCPServer
         ],
         'serverInfo' => [
           'name' => config('mcp.server.name', 'Laravel MCP Server'),
-          'version' => config('mcp.server.version', '1.0.0')
+          'version' => config('mcp.server.version', '1.1.0')
         ]
       ],
       'id' => $id
