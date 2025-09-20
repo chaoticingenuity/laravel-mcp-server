@@ -9,9 +9,9 @@ class DefaultPermissionResolver implements PermissionResolverInterface
     public function resolveUserPermissions($user): array
     {
         // Use user's mcp_permissions property or default permissions
-        return !empty($user->mcp_permissions) ? $user->mcp_permissions : [
+        return ! empty($user->mcp_permissions) ? $user->mcp_permissions : [
             'tools.echo',
-            'resources.status'
+            'resources.status',
         ];
     }
 

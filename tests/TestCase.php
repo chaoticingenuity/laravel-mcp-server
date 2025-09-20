@@ -2,8 +2,8 @@
 
 namespace ChaoticIngenuity\LaravelMCP\Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
 use ChaoticIngenuity\LaravelMCP\Providers\MCPServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
@@ -22,17 +22,17 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
-        
+
         // Set up MCP configuration for tests
         config()->set('mcp.server.name', 'Laravel MCP Server');
         config()->set('mcp.server.version', '1.0.0');
         config()->set('mcp.routes.enabled', true);
         config()->set('mcp.routes.prefix', 'api');
-        
+
         // Configure Bouncer based on environment variable
         $bouncerEnabled = env('MCP_BOUNCER_ENABLED', false);
         config()->set('mcp.auth.bouncer.enabled', $bouncerEnabled);
-        
+
         // Register middleware aliases manually for testing
         $router = $app['router'];
         $router->aliasMiddleware('mcp.auth', \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPAuthMiddleware::class);

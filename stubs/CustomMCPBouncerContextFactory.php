@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Services\Custom\MCP;
 
-use ChaoticIngenuity\LaravelMCP\Core\{Context, ContextFactory};
 use ChaoticIngenuity\LaravelMCP\Contracts\ContextInterface;
+use ChaoticIngenuity\LaravelMCP\Core\Context;
+use ChaoticIngenuity\LaravelMCP\Core\ContextFactory;
 
 class BouncerContextFactory extends ContextFactory
 {
@@ -23,13 +25,13 @@ class BouncerContextFactory extends ContextFactory
         $userModel = config('mcp.auth.user_model.class', \App\Models\User::class);
         $user = $userModel::find($userId);
 
-        if (!$user || !$user->hasMCPAccess()) {
+        if (! $user || ! $user->hasMCPAccess()) {
             throw new \Exception("Invalid user or no MCP access: {$clientId}");
         }
 
         // Get auth metadata from request if available
         $authMetadata = request()->input('mcp_auth_metadata', []);
-        
+
         return new Context(
             clientId: $clientId,
             permissions: $user->getMCPPermissions(),

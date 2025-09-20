@@ -2,11 +2,11 @@
 
 namespace ChaoticIngenuity\LaravelMCP\Tests\Feature;
 
-use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
+use ChaoticIngenuity\LaravelMCP\Auth\AuthenticationResult;
 use ChaoticIngenuity\LaravelMCP\Auth\AuthenticatorManager;
 use ChaoticIngenuity\LaravelMCP\Auth\StaticConfigAuthenticator;
-use ChaoticIngenuity\LaravelMCP\Auth\AuthenticationResult;
 use ChaoticIngenuity\LaravelMCP\Contracts\AuthenticatorInterface;
+use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
@@ -20,26 +20,26 @@ class AuthenticationTest extends TestCase
             'mcp.auth.bearer_tokens' => ['bearer-token-123'],
             'mcp.auth.api_key_clients' => [
                 'test-api-key' => 'api_client',
-                'another-key' => 'secondary_client'
+                'another-key' => 'secondary_client',
             ],
             'mcp.auth.token_clients' => [
-                'bearer-token-123' => 'bearer_client'
+                'bearer-token-123' => 'bearer_client',
             ],
             'mcp.auth.clients.api_client' => [
                 'permissions' => ['tools.*'],
                 'field_access' => ['*'],
-                'metadata' => ['tier' => 'standard']
+                'metadata' => ['tier' => 'standard'],
             ],
             'mcp.auth.clients.secondary_client' => [
                 'permissions' => ['tools.echo'],
                 'field_access' => [],
-                'metadata' => ['tier' => 'basic']
+                'metadata' => ['tier' => 'basic'],
             ],
             'mcp.auth.clients.bearer_client' => [
                 'permissions' => ['tools.*', 'resources.*'],
                 'field_access' => ['*'],
-                'metadata' => ['tier' => 'premium']
-            ]
+                'metadata' => ['tier' => 'premium'],
+            ],
         ]);
     }
 
@@ -49,9 +49,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-api-key'
+            'X-MCP-API-Key' => 'test-api-key',
         ]);
 
         $response->assertStatus(200);
@@ -63,9 +63,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'invalid-key'
+            'X-MCP-API-Key' => 'invalid-key',
         ]);
 
         $response->assertStatus(401)
@@ -73,8 +73,8 @@ class AuthenticationTest extends TestCase
                 'jsonrpc' => '2.0',
                 'error' => [
                     'code' => -32001,
-                    'message' => 'Invalid API key'
-                ]
+                    'message' => 'Invalid API key',
+                ],
             ]);
     }
 
@@ -84,9 +84,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'Authorization' => 'Basic ' . base64_encode('testuser:testpass')
+            'Authorization' => 'Basic '.base64_encode('testuser:testpass'),
         ]);
 
         $response->assertStatus(200);
@@ -98,9 +98,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'Authorization' => 'Basic ' . base64_encode('testuser:wrongpass')
+            'Authorization' => 'Basic '.base64_encode('testuser:wrongpass'),
         ]);
 
         $response->assertStatus(401);
@@ -112,9 +112,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'Authorization' => 'Bearer bearer-token-123'
+            'Authorization' => 'Bearer bearer-token-123',
         ]);
 
         $response->assertStatus(200);
@@ -126,9 +126,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'Authorization' => 'Bearer invalid-token'
+            'Authorization' => 'Bearer invalid-token',
         ]);
 
         $response->assertStatus(401);
@@ -140,22 +140,22 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ]);
 
         $response->assertStatus(401)
             ->assertJsonFragment([
                 'error' => [
                     'code' => -32001,
-                    'message' => 'Unauthorized'
-                ]
+                    'message' => 'Unauthorized',
+                ],
             ]);
     }
 
     /** @test */
     public function static_config_authenticator_handles_api_keys(): void
     {
-        $authenticator = new StaticConfigAuthenticator();
+        $authenticator = new StaticConfigAuthenticator;
 
         $this->assertTrue($authenticator->handles('api_key'));
         $this->assertTrue($authenticator->handles('basic_auth'));
@@ -166,7 +166,7 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function static_config_authenticator_validates_api_keys(): void
     {
-        $authenticator = new StaticConfigAuthenticator();
+        $authenticator = new StaticConfigAuthenticator;
 
         $result = $authenticator->authenticate('api_key', ['api_key' => 'test-api-key']);
         $this->assertTrue($result->isSuccess());
@@ -180,17 +180,17 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function static_config_authenticator_validates_basic_auth(): void
     {
-        $authenticator = new StaticConfigAuthenticator();
+        $authenticator = new StaticConfigAuthenticator;
 
         $result = $authenticator->authenticate('basic_auth', [
             'username' => 'testuser',
-            'password' => 'testpass'
+            'password' => 'testpass',
         ]);
         $this->assertTrue($result->isSuccess());
 
         $result = $authenticator->authenticate('basic_auth', [
             'username' => 'testuser',
-            'password' => 'wrongpass'
+            'password' => 'wrongpass',
         ]);
         $this->assertFalse($result->isSuccess());
     }
@@ -198,7 +198,7 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function static_config_authenticator_validates_bearer_tokens(): void
     {
-        $authenticator = new StaticConfigAuthenticator();
+        $authenticator = new StaticConfigAuthenticator;
 
         $result = $authenticator->authenticate('bearer_token', ['token' => 'bearer-token-123']);
         $this->assertTrue($result->isSuccess());
@@ -211,7 +211,7 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function authenticator_manager_registers_default_authenticators(): void
     {
-        $manager = new AuthenticatorManager();
+        $manager = new AuthenticatorManager;
 
         $result = $manager->authenticate('api_key', ['api_key' => 'test-api-key']);
         $this->assertTrue($result->isSuccess());
@@ -220,7 +220,7 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function authenticator_manager_handles_unknown_auth_types(): void
     {
-        $manager = new AuthenticatorManager();
+        $manager = new AuthenticatorManager;
 
         $result = $manager->authenticate('unknown_type', []);
         $this->assertFalse($result->isSuccess());
@@ -230,7 +230,8 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function custom_authenticator_can_be_registered(): void
     {
-        $customAuth = new class implements AuthenticatorInterface {
+        $customAuth = new class implements AuthenticatorInterface
+        {
             public function handles(string $type): bool
             {
                 return $type === 'custom';
@@ -241,6 +242,7 @@ class AuthenticationTest extends TestCase
                 if (($credentials['token'] ?? '') === 'custom-token') {
                     return AuthenticationResult::success('custom_client');
                 }
+
                 return AuthenticationResult::failure('Invalid custom token');
             }
 
@@ -250,7 +252,7 @@ class AuthenticationTest extends TestCase
             }
         };
 
-        $manager = new AuthenticatorManager();
+        $manager = new AuthenticatorManager;
         $manager->registerAuthenticator($customAuth);
 
         $result = $manager->authenticate('custom', ['token' => 'custom-token']);
@@ -268,9 +270,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-api-key'
+            'X-MCP-API-Key' => 'test-api-key',
         ]);
 
         $response->assertStatus(200);
@@ -281,9 +283,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'another-key'
+            'X-MCP-API-Key' => 'another-key',
         ]);
 
         $response->assertStatus(200);
@@ -319,9 +321,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'Authorization' => 'Malformed Header'
+            'Authorization' => 'Malformed Header',
         ]);
 
         $response->assertStatus(401);
@@ -333,9 +335,9 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => ''
+            'X-MCP-API-Key' => '',
         ]);
 
         $response->assertStatus(401);

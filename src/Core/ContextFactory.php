@@ -11,21 +11,21 @@ class ContextFactory
     {
         // Validate client ID input
         if (empty($clientId)) {
-            throw new MCPAuthenticationException("Client ID cannot be empty");
+            throw new MCPAuthenticationException('Client ID cannot be empty');
         }
-        
+
         if (strlen($clientId) > 255) {
-            throw new MCPAuthenticationException("Client ID too long");
+            throw new MCPAuthenticationException('Client ID too long');
         }
-        
+
         // Only allow alphanumeric, underscore, hyphen, and dot
-        if (!preg_match('/^[a-zA-Z0-9._-]+$/', $clientId)) {
-            throw new MCPAuthenticationException("Invalid client ID format");
+        if (! preg_match('/^[a-zA-Z0-9._-]+$/', $clientId)) {
+            throw new MCPAuthenticationException('Invalid client ID format');
         }
-        
+
         $clientConfig = config("mcp.auth.clients.{$clientId}");
 
-        if (!$clientConfig) {
+        if (! $clientConfig) {
             // In test environment or for unknown clients, provide default context
             if (app()->environment('testing') || config('mcp.allow_unknown_clients', false)) {
                 return new Context(

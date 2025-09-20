@@ -2,10 +2,10 @@
 
 namespace ChaoticIngenuity\LaravelMCP\Tests\Feature;
 
-use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
 use ChaoticIngenuity\LaravelMCP\Auth\BouncerPermissionManager;
-use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
 use ChaoticIngenuity\LaravelMCP\Contracts\MCPUserInterface;
+use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
+use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
 use ChaoticIngenuity\LaravelMCP\Traits\HasMCPAuthentication;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -25,16 +25,17 @@ class BouncerIntegrationTest extends TestCase
             'mcp.auth.clients.bouncer_client' => [
                 'permissions' => ['tools.*'],
                 'field_access' => ['*'],
-                'metadata' => ['tier' => 'bouncer']
-            ]
+                'metadata' => ['tier' => 'bouncer'],
+            ],
         ]);
     }
 
     /** @test */
     public function it_validates_bouncer_configuration_when_enabled(): void
     {
-        if (!env('MCP_BOUNCER_ENABLED', false) && !class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! env('MCP_BOUNCER_ENABLED', false) && ! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->markTestSkipped('Bouncer integration not enabled/available (set MCP_BOUNCER_ENABLED=true or install Bouncer to test)');
+
             return;
         }
 
@@ -42,7 +43,7 @@ class BouncerIntegrationTest extends TestCase
 
         if (class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             // Bouncer is available - should work fine
-            $manager = new \ChaoticIngenuity\LaravelMCP\Auth\BouncerPermissionManager();
+            $manager = new \ChaoticIngenuity\LaravelMCP\Auth\BouncerPermissionManager;
             $this->assertInstanceOf(\ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface::class, $manager);
         } else {
             // This case should not happen since we skip above, but keeping for completeness
@@ -60,7 +61,7 @@ class BouncerIntegrationTest extends TestCase
         $this->assertInstanceOf(PermissionManagerInterface::class, $manager);
 
         // Should fall back to DefaultPermissionManager
-        if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->assertInstanceOf(\ChaoticIngenuity\LaravelMCP\Auth\DefaultPermissionManager::class, $manager);
         }
     }
@@ -86,7 +87,7 @@ class BouncerIntegrationTest extends TestCase
     {
         config(['mcp.auth.bouncer.enabled' => true]);
 
-        if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             // Should fall back to default manager
             $manager = app(PermissionManagerInterface::class);
             $this->assertInstanceOf(\ChaoticIngenuity\LaravelMCP\Auth\DefaultPermissionManager::class, $manager);
@@ -98,7 +99,7 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function bouncer_integration_works_with_mcp_setup_command(): void
     {
-        if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->artisan('mcp:setup --bouncer')
                 ->expectsOutput('Bouncer package not installed. Run: composer require silber/bouncer')
                 ->assertExitCode(1);
@@ -115,7 +116,7 @@ class BouncerIntegrationTest extends TestCase
     {
         config(['mcp.auth.bouncer.ability_prefix' => 'custom_prefix.']);
 
-        $manager = new BouncerPermissionManager();
+        $manager = new BouncerPermissionManager;
 
         // Use reflection to test private method
         $reflection = new \ReflectionClass($manager);
@@ -135,13 +136,14 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function it_handles_bouncer_cache_configuration(): void
     {
-        if (!env('MCP_BOUNCER_ENABLED', false) && !class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! env('MCP_BOUNCER_ENABLED', false) && ! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->markTestSkipped('Bouncer integration not enabled/available (set MCP_BOUNCER_ENABLED=true or install Bouncer to test)');
+
             return;
         }
 
-        $manager = new BouncerPermissionManager();
-        $user = new TestBouncerUser();
+        $manager = new BouncerPermissionManager;
+        $user = new TestBouncerUser;
 
         // Test with cache enabled
         config(['mcp.auth.bouncer.cache_abilities' => true]);
@@ -165,7 +167,7 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function bouncer_user_model_example_works(): void
     {
-        $user = new TestBouncerUser();
+        $user = new TestBouncerUser;
 
         if (class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             // Test that HasRolesAndAbilities trait methods exist
@@ -184,7 +186,7 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function it_validates_bouncer_detection_logic(): void
     {
-        $manager = new BouncerPermissionManager();
+        $manager = new BouncerPermissionManager;
 
         // Use reflection to test private method
         $reflection = new \ReflectionClass($manager);
@@ -200,10 +202,10 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function bouncer_permission_manager_gracefully_handles_missing_package(): void
     {
-        $manager = new BouncerPermissionManager();
-        $user = new TestBouncerUser();
+        $manager = new BouncerPermissionManager;
+        $user = new TestBouncerUser;
 
-        if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             // Should return empty abilities when Bouncer not available
             $abilities = $manager->getUserAbilities($user);
             $this->assertIsArray($abilities);
@@ -220,8 +222,9 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function service_provider_configuration_validation_works(): void
     {
-        if (!env('MCP_BOUNCER_ENABLED', false) && !class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! env('MCP_BOUNCER_ENABLED', false) && ! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->markTestSkipped('Bouncer integration not enabled/available (set MCP_BOUNCER_ENABLED=true or install Bouncer to test)');
+
             return;
         }
 
@@ -241,7 +244,7 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function trait_bouncer_detection_works(): void
     {
-        $user = new TestBouncerUser();
+        $user = new TestBouncerUser;
 
         $shouldUseBouncer = $user->shouldUseBouncer();
 
@@ -254,7 +257,7 @@ class BouncerIntegrationTest extends TestCase
     /** @test */
     public function integration_test_with_http_requests(): void
     {
-        if (!class_exists(\Silber\Bouncer\BouncerFacade::class)) {
+        if (! class_exists(\Silber\Bouncer\BouncerFacade::class)) {
             $this->markTestSkipped('Bouncer not available for HTTP integration test');
         }
 
@@ -264,15 +267,15 @@ class BouncerIntegrationTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'initialize',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
             ->assertJsonFragment([
                 'jsonrpc' => '2.0',
-                'id' => 1
+                'id' => 1,
             ]);
     }
 }
@@ -298,7 +301,7 @@ class TestBouncerUser extends Authenticatable implements MCPUserInterface
         'name',
         'email',
         'password',
-        'mcp_enabled'
+        'mcp_enabled',
     ];
 
     protected $casts = [
@@ -338,7 +341,7 @@ class TestBouncerUser extends Authenticatable implements MCPUserInterface
     {
         if (trait_exists($traitName)) {
             $uses = class_uses_recursive(static::class);
-            if (!in_array($traitName, $uses)) {
+            if (! in_array($traitName, $uses)) {
                 // This is for testing only - in real code the trait would be declared normally
                 // We can't actually add traits at runtime, so this is just for method existence testing
             }
