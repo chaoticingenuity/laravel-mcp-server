@@ -1,8 +1,9 @@
 <?php
+
 namespace ChaoticIngenuity\LaravelMCP\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\{Request, Response};
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 
 class MCPThrottleMiddleware
@@ -33,19 +34,19 @@ class MCPThrottleMiddleware
                     'data' => [
                         'retry_after' => $retryAfter,
                         'limit' => $maxRequests,
-                        'window' => 'per minute'
-                    ]
-                ]
+                        'window' => 'per minute',
+                    ],
+                ],
             ], 429)->withHeaders([
-                        'Retry-After' => $retryAfter,
-                        'X-RateLimit-Limit' => $maxRequests,
-                        'X-RateLimit-Remaining' => 0,
-                        'X-RateLimit-Reset' => now()->addMinutes($decayMinutes)->timestamp,
-                    ]);
+                'Retry-After' => $retryAfter,
+                'X-RateLimit-Limit' => $maxRequests,
+                'X-RateLimit-Remaining' => 0,
+                'X-RateLimit-Reset' => now()->addMinutes($decayMinutes)->timestamp,
+            ]);
         }
 
         // Check burst limit (short-term)
-        $burstKey = 'mcp_burst:' . $client;
+        $burstKey = 'mcp_burst:'.$client;
         if (RateLimiter::tooManyAttempts($burstKey, $burstLimit)) {
             return response()->json([
                 'jsonrpc' => '2.0',
@@ -54,9 +55,9 @@ class MCPThrottleMiddleware
                     'message' => 'Burst limit exceeded',
                     'data' => [
                         'retry_after' => 10,
-                        'burst_limit' => $burstLimit
-                    ]
-                ]
+                        'burst_limit' => $burstLimit,
+                    ],
+                ],
             ], 429);
         }
 

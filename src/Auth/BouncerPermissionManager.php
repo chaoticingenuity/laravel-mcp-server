@@ -6,56 +6,57 @@ use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
 
 class BouncerPermissionManager implements PermissionManagerInterface
 {
-  public function userHasAbility($user, string $ability): bool
-  {
-    if (!$this->isBouncerAvailable()) {
-      throw new \RuntimeException('Bouncer package is required but not installed');
+    public function userHasAbility($user, string $ability): bool
+    {
+        if (! $this->isBouncerAvailable()) {
+            throw new \RuntimeException('Bouncer package is required but not installed');
+        }
+
+        $prefixedAbility = $this->getPrefixedAbility($ability);
+
+        return $user->can($prefixedAbility);
     }
 
-    $prefixedAbility = $this->getPrefixedAbility($ability);
-    return $user->can($prefixedAbility);
-  }
+    public function getUserAbilities($user): array
+    {
+        if (! $this->isBouncerAvailable()) {
+            return [];
+        }
 
-  public function getUserAbilities($user): array
-  {
-    if (!$this->isBouncerAvailable()) {
-      return [];
+        return $user->getAbilities()
+            ->filter(fn ($ability) => str_starts_with($ability->name, $this->getPrefix()))
+            ->map(fn ($ability) => str_replace($this->getPrefix(), '', $ability->name))
+            ->values()
+            ->toArray();
     }
 
-    return $user->getAbilities()
-      ->filter(fn($ability) => str_starts_with($ability->name, $this->getPrefix()))
-      ->map(fn($ability) => str_replace($this->getPrefix(), '', $ability->name))
-      ->values()
-      ->toArray();
-  }
+    public function cacheUserAbilities($user): void
+    {
+        if (! config('mcp.auth.bouncer.cache_abilities', true)) {
+            return;
+        }
 
-  public function cacheUserAbilities($user): void
-  {
-    if (!config('mcp.auth.bouncer.cache_abilities', true)) {
-      return;
+        if (! $this->isBouncerAvailable()) {
+            // Graceful degradation when Bouncer is not available
+            return;
+        }
+
+        // Use Bouncer's built-in caching
+        \Silber\Bouncer\BouncerFacade::refresh();
     }
 
-    if (!$this->isBouncerAvailable()) {
-      // Graceful degradation when Bouncer is not available
-      return;
+    private function isBouncerAvailable(): bool
+    {
+        return class_exists(\Silber\Bouncer\BouncerFacade::class);
     }
 
-    // Use Bouncer's built-in caching
-    \Silber\Bouncer\BouncerFacade::refresh();
-  }
+    private function getPrefixedAbility(string $ability): string
+    {
+        return $this->getPrefix().$ability;
+    }
 
-  private function isBouncerAvailable(): bool
-  {
-    return class_exists(\Silber\Bouncer\BouncerFacade::class);
-  }
-
-  private function getPrefixedAbility(string $ability): string
-  {
-    return $this->getPrefix() . $ability;
-  }
-
-  private function getPrefix(): string
-  {
-    return config('mcp.auth.bouncer.ability_prefix', 'mcp.');
-  }
+    private function getPrefix(): string
+    {
+        return config('mcp.auth.bouncer.ability_prefix', 'mcp.');
+    }
 }

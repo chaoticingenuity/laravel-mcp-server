@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Services\Custom\MCP\Auth;
 
-use ChaoticIngenuity\LaravelMCP\Contracts\AuthenticatorInterface;
 use ChaoticIngenuity\LaravelMCP\Auth\AuthenticationResult;
-use Illuminate\Support\Facades\{Cache, Log};
+use ChaoticIngenuity\LaravelMCP\Contracts\AuthenticatorInterface;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class DatabaseAuthenticator implements AuthenticatorInterface
 {
@@ -24,6 +26,7 @@ class DatabaseAuthenticator implements AuthenticatorInterface
     public function getClientId(string $type, array $credentials): ?string
     {
         $result = $this->authenticate($type, $credentials);
+
         return $result->isSuccess() ? $result->getClientId() : null;
     }
 
@@ -35,7 +38,7 @@ class DatabaseAuthenticator implements AuthenticatorInterface
             return AuthenticationResult::failure('API key required');
         }
 
-        $cacheKey = 'mcp.auth.api_key.' . hash('sha256', $apiKey);
+        $cacheKey = 'mcp.auth.api_key.'.hash('sha256', $apiKey);
 
         // Try to get user from cache first - use efficient query but preserve customizability
         $userData = Cache::remember($cacheKey, config('mcp.auth.cache_duration', 300), function () use ($apiKey) {
@@ -54,11 +57,12 @@ class DatabaseAuthenticator implements AuthenticatorInterface
             });
         });
 
-        if (!$userData) {
+        if (! $userData) {
             Log::channel('mcp')->warning('Invalid API key attempt', [
-                'api_key_prefix' => substr($apiKey, 0, 8) . '...',
-                'ip' => request()->ip()
+                'api_key_prefix' => substr($apiKey, 0, 8).'...',
+                'ip' => request()->ip(),
             ]);
+
             return AuthenticationResult::failure('Invalid or expired API key');
         }
 
@@ -93,12 +97,12 @@ class DatabaseAuthenticator implements AuthenticatorInterface
         }
 
         $userModel = config('mcp.auth.user_model.class', \App\Models\User::class);
-        $cacheKey = "mcp.auth.user_token.{$userId}." . hash('sha256', $token);
+        $cacheKey = "mcp.auth.user_token.{$userId}.".hash('sha256', $token);
 
         $userData = Cache::remember($cacheKey, config('mcp.auth.cache_duration', 300), function () use ($userId, $token, $userModel) {
             $user = $userModel::find($userId);
 
-            if (!$user || !$user->hasMCPAccess()) {
+            if (! $user || ! $user->hasMCPAccess()) {
                 return null;
             }
 
@@ -110,7 +114,7 @@ class DatabaseAuthenticator implements AuthenticatorInterface
                 ) {
                     return [
                         'user' => $user,
-                        'token_data' => $tokenData
+                        'token_data' => $tokenData,
                     ];
                 }
             }
@@ -118,7 +122,7 @@ class DatabaseAuthenticator implements AuthenticatorInterface
             return null;
         });
 
-        if (!$userData) {
+        if (! $userData) {
             return AuthenticationResult::failure('Invalid user token');
         }
 

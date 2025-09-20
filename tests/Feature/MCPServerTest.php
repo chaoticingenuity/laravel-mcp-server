@@ -2,10 +2,8 @@
 
 namespace ChaoticIngenuity\LaravelMCP\Tests\Feature;
 
-use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
 use ChaoticIngenuity\LaravelMCP\MCPServer;
-use ChaoticIngenuity\LaravelMCP\Core\Registry;
-use ChaoticIngenuity\LaravelMCP\Core\ContextFactory;
+use ChaoticIngenuity\LaravelMCP\Tests\TestCase;
 
 class MCPServerTest extends TestCase
 {
@@ -19,23 +17,23 @@ class MCPServerTest extends TestCase
             'mcp.auth.api_key_clients' => [
                 'test-key' => 'test_client',
                 'limited-key' => 'limited_client',
-                'no-access-key' => 'no_access_client'
+                'no-access-key' => 'no_access_client',
             ],
             'mcp.auth.clients.test_client' => [
                 'permissions' => ['tools.*', 'resources.*'],
                 'field_access' => ['*'],
-                'metadata' => ['tier' => 'test']
+                'metadata' => ['tier' => 'test'],
             ],
             'mcp.auth.clients.limited_client' => [
                 'permissions' => ['tools.echo'],
                 'field_access' => [],
-                'metadata' => ['tier' => 'limited']
+                'metadata' => ['tier' => 'limited'],
             ],
             'mcp.auth.clients.no_access_client' => [
                 'permissions' => [],
                 'field_access' => [],
-                'metadata' => ['tier' => 'none']
-            ]
+                'metadata' => ['tier' => 'none'],
+            ],
         ]);
     }
 
@@ -47,7 +45,7 @@ class MCPServerTest extends TestCase
         $response = $server->handleRequest([
             'method' => 'initialize',
             'params' => [],
-            'id' => 1
+            'id' => 1,
         ]);
 
         $this->assertEquals('2.0', $response['jsonrpc']);
@@ -67,9 +65,9 @@ class MCPServerTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -77,14 +75,14 @@ class MCPServerTest extends TestCase
                 'jsonrpc',
                 'result' => [
                     'tools' => [
-                        '*' => ['name', 'description', 'inputSchema']
-                    ]
+                        '*' => ['name', 'description', 'inputSchema'],
+                    ],
                 ],
-                'id'
+                'id',
             ])
             ->assertJsonFragment([
                 'jsonrpc' => '2.0',
-                'id' => 1
+                'id' => 1,
             ]);
 
         // Verify at least echo tool is present
@@ -100,9 +98,9 @@ class MCPServerTest extends TestCase
             'mcp.auth.clients.limited_client' => [
                 'permissions' => ['tools.echo'], // Only echo tool
                 'field_access' => [],
-                'metadata' => []
+                'metadata' => [],
             ],
-            'mcp.auth.api_key_clients' => ['limited-key' => 'limited_client']
+            'mcp.auth.api_key_clients' => ['limited-key' => 'limited_client'],
         ]);
 
         $this->withSession(['mcp_client' => 'limited_client']);
@@ -110,9 +108,9 @@ class MCPServerTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'tools/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'limited-key'
+            'X-MCP-API-Key' => 'limited-key',
         ]);
 
         $response->assertStatus(200);
@@ -132,11 +130,11 @@ class MCPServerTest extends TestCase
             'method' => 'tools/call',
             'params' => [
                 'name' => 'echo',
-                'arguments' => ['message' => 'Hello World']
+                'arguments' => ['message' => 'Hello World'],
             ],
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -144,14 +142,14 @@ class MCPServerTest extends TestCase
                 'jsonrpc',
                 'result' => [
                     'content' => [
-                        '*' => ['type', 'text']
+                        '*' => ['type', 'text'],
                     ],
-                    'metadata'
+                    'metadata',
                 ],
-                'id'
+                'id',
             ])
             ->assertJsonFragment([
-                'text' => 'Echo: Hello World'
+                'text' => 'Echo: Hello World',
             ]);
     }
 
@@ -162,9 +160,9 @@ class MCPServerTest extends TestCase
             'mcp.auth.clients.no_access_client' => [
                 'permissions' => [], // No permissions
                 'field_access' => [],
-                'metadata' => []
+                'metadata' => [],
             ],
-            'mcp.auth.api_key_clients' => ['no-access-key' => 'no_access_client']
+            'mcp.auth.api_key_clients' => ['no-access-key' => 'no_access_client'],
         ]);
 
         $this->withSession(['mcp_client' => 'no_access_client']);
@@ -174,11 +172,11 @@ class MCPServerTest extends TestCase
             'method' => 'tools/call',
             'params' => [
                 'name' => 'echo',
-                'arguments' => ['message' => 'Hello World']
+                'arguments' => ['message' => 'Hello World'],
             ],
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'no-access-key'
+            'X-MCP-API-Key' => 'no-access-key',
         ]);
 
         $response->assertStatus(200)
@@ -186,9 +184,9 @@ class MCPServerTest extends TestCase
                 'jsonrpc' => '2.0',
                 'error' => [
                     'code' => -32602,
-                    'message' => 'Tool not found or not accessible'
+                    'message' => 'Tool not found or not accessible',
                 ],
-                'id' => 1
+                'id' => 1,
             ]);
     }
 
@@ -200,9 +198,9 @@ class MCPServerTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'resources/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -210,10 +208,10 @@ class MCPServerTest extends TestCase
                 'jsonrpc',
                 'result' => [
                     'resources' => [
-                        '*' => ['uri', 'name', 'description', 'mimeType']
-                    ]
+                        '*' => ['uri', 'name', 'description', 'mimeType'],
+                    ],
                 ],
-                'id'
+                'id',
             ]);
 
         // Verify status resource is present
@@ -231,11 +229,11 @@ class MCPServerTest extends TestCase
             'jsonrpc' => '2.0',
             'method' => 'resources/read',
             'params' => [
-                'uri' => 'system://status'
+                'uri' => 'system://status',
             ],
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -243,11 +241,11 @@ class MCPServerTest extends TestCase
                 'jsonrpc',
                 'result' => [
                     'contents' => [
-                        '*' => ['uri', 'mimeType', 'text']
+                        '*' => ['uri', 'mimeType', 'text'],
                     ],
-                    'metadata'
+                    'metadata',
                 ],
-                'id'
+                'id',
             ]);
 
         $data = $response->json();
@@ -264,9 +262,9 @@ class MCPServerTest extends TestCase
             'jsonrpc' => '2.0',
             'method' => 'resources/read',
             'params' => [], // Missing uri parameter
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -274,9 +272,9 @@ class MCPServerTest extends TestCase
                 'jsonrpc' => '2.0',
                 'error' => [
                     'code' => -32602,
-                    'message' => 'Missing uri parameter'
+                    'message' => 'Missing uri parameter',
                 ],
-                'id' => 1
+                'id' => 1,
             ]);
     }
 
@@ -288,18 +286,18 @@ class MCPServerTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'resources/templates/list',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'jsonrpc',
                 'result' => [
-                    'resourceTemplates'
+                    'resourceTemplates',
                 ],
-                'id'
+                'id',
             ]);
     }
 
@@ -311,9 +309,9 @@ class MCPServerTest extends TestCase
         $response = $this->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
             'method' => 'unknown/method',
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -321,9 +319,9 @@ class MCPServerTest extends TestCase
                 'jsonrpc' => '2.0',
                 'error' => [
                     'code' => -32601,
-                    'message' => 'Method not found'
+                    'message' => 'Method not found',
                 ],
-                'id' => 1
+                'id' => 1,
             ]);
     }
 
@@ -339,11 +337,11 @@ class MCPServerTest extends TestCase
             'method' => 'tools/call',
             'params' => [
                 'name' => 'nonexistent_tool',
-                'arguments' => []
+                'arguments' => [],
             ],
-            'id' => 1
+            'id' => 1,
         ], [
-            'X-MCP-API-Key' => 'test-key'
+            'X-MCP-API-Key' => 'test-key',
         ]);
 
         $response->assertStatus(200)
@@ -351,9 +349,9 @@ class MCPServerTest extends TestCase
                 'jsonrpc' => '2.0',
                 'error' => [
                     'code' => -32602,
-                    'message' => 'Tool not found or not accessible'
+                    'message' => 'Tool not found or not accessible',
                 ],
-                'id' => 1
+                'id' => 1,
             ]);
     }
 }

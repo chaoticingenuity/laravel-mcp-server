@@ -1,10 +1,10 @@
 <?php
+
 namespace ChaoticIngenuity\LaravelMCP\Traits;
 
-use ChaoticIngenuity\LaravelMCP\Models\ApiKey;
 use ChaoticIngenuity\LaravelMCP\Contracts\PermissionManagerInterface;
+use ChaoticIngenuity\LaravelMCP\Models\ApiKey;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Hash;
 
 trait HasMCPAuthentication
 {
@@ -55,7 +55,7 @@ trait HasMCPAuthentication
      * - Mark key as revoked in user metadata
      * - Custom revocation logic
      *
-     * @param string $key The key value or key identifier
+     * @param  string  $key  The key value or key identifier
      */
     public function revokeMCPApiKey(string $key): bool
     {
@@ -70,7 +70,7 @@ trait HasMCPAuthentication
      * This is more secure than exposing key collections.
      * Override for custom key storage patterns.
      *
-     * @param string $key The key to validate
+     * @param  string  $key  The key to validate
      * @return bool True if key is valid and belongs to this user
      */
     public function isMCPApiKeyValid(string $key): bool
@@ -84,7 +84,7 @@ trait HasMCPAuthentication
     /**
      * Get API key information without exposing the actual key
      *
-     * @param string $key The key to lookup
+     * @param  string  $key  The key to lookup
      * @return array|null Key metadata without the actual key value
      */
     public function getMCPApiKeyInfo(string $key): ?array
@@ -93,7 +93,7 @@ trait HasMCPAuthentication
             ->where('key', $key)
             ->first(['id', 'client_identifier', 'name', 'scopes', 'is_active', 'last_used_at', 'expires_at', 'created_at']);
 
-        if (!$apiKey) {
+        if (! $apiKey) {
             return null;
         }
 
@@ -124,7 +124,7 @@ trait HasMCPAuthentication
         return [
             'total_keys' => $keys->count(),
             'active_keys' => $keys->where('is_active', true)->count(),
-            'expired_keys' => $keys->filter(fn($key) => $key->expires_at && $key->expires_at->isPast())->count(),
+            'expired_keys' => $keys->filter(fn ($key) => $key->expires_at && $key->expires_at->isPast())->count(),
             'keys' => $keys->map(function ($key) {
                 return [
                     'id' => $key->id,
@@ -169,14 +169,15 @@ trait HasMCPAuthentication
         if (app()->bound('mcp.permission_resolver_manager')) {
             return app('mcp.permission_resolver_manager')->resolveUserPermissions($this);
         }
-        
+
         // Fallback to legacy behavior
         if ($this->shouldUseBouncer()) {
             return app(PermissionManagerInterface::class)->getUserAbilities($this);
         }
-        return !empty($this->mcp_permissions) ? $this->mcp_permissions : [
+
+        return ! empty($this->mcp_permissions) ? $this->mcp_permissions : [
             'tools.echo',
-            'resources.status'
+            'resources.status',
         ];
     }
 
@@ -188,7 +189,7 @@ trait HasMCPAuthentication
         if (app()->bound('mcp.permission_resolver_manager')) {
             return app('mcp.permission_resolver_manager')->resolveUserFieldAccess($this);
         }
-        
+
         return $this->mcp_field_access ?? [];
     }
 
@@ -223,7 +224,7 @@ trait HasMCPAuthentication
         // Check for wildcard permissions
         $permissionParts = explode('.', $permission);
         for ($i = count($permissionParts) - 1; $i >= 0; $i--) {
-            $wildcardPermission = implode('.', array_slice($permissionParts, 0, $i)) . '.*';
+            $wildcardPermission = implode('.', array_slice($permissionParts, 0, $i)).'.*';
             if (in_array($wildcardPermission, $permissions)) {
                 return true;
             }
@@ -261,16 +262,17 @@ trait HasMCPAuthentication
     public function rotateMCPApiKey(string $oldKey): ?ApiKey
     {
         $apiKey = $this->apiKeys()->where('key', $oldKey)->first();
-        if (!$apiKey) {
+        if (! $apiKey) {
             return null;
         }
-        
+
         return \Illuminate\Support\Facades\DB::transaction(function () use ($apiKey) {
             $apiKey->update(['is_active' => false]);
+
             return $this->generateMCPApiKey(
                 $apiKey->client_identifier,
                 $apiKey->scopes,
-                ($apiKey->name ?? 'API Key') . ' (rotated)'
+                ($apiKey->name ?? 'API Key').' (rotated)'
             );
         });
     }
@@ -284,15 +286,15 @@ trait HasMCPAuthentication
             ->where('key', $key)
             ->valid()
             ->first();
-            
+
         if ($apiKey) {
             $apiKey->recordUsage([
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->header('User-Agent'),
-                'endpoint' => request()->path()
+                'endpoint' => request()->path(),
             ]);
         }
-        
+
         return $apiKey;
     }
 
@@ -302,6 +304,7 @@ trait HasMCPAuthentication
     public function hasMCPScope(string $scope): bool
     {
         $userScopes = $this->mcp_scopes ?? [];
+
         return in_array($scope, $userScopes) || in_array('*', $userScopes);
     }
 
@@ -319,7 +322,7 @@ trait HasMCPAuthentication
     public function addMCPScope(string $scope): void
     {
         $scopes = $this->getMCPScopes();
-        if (!in_array($scope, $scopes)) {
+        if (! in_array($scope, $scopes)) {
             $scopes[] = $scope;
             $this->mcp_scopes = $scopes;
             $this->save();

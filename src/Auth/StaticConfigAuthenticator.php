@@ -1,7 +1,7 @@
 <?php
+
 namespace ChaoticIngenuity\LaravelMCP\Auth;
 
-use ChaoticIngenuity\LaravelMCP\Auth\AuthenticationResult;
 use ChaoticIngenuity\LaravelMCP\Contracts\AuthenticatorInterface;
 
 class StaticConfigAuthenticator implements AuthenticatorInterface
@@ -24,6 +24,7 @@ class StaticConfigAuthenticator implements AuthenticatorInterface
     public function getClientId(string $type, array $credentials): ?string
     {
         $result = $this->authenticate($type, $credentials);
+
         return $result->isSuccess() ? $result->getClientId() : null;
     }
 
@@ -34,6 +35,7 @@ class StaticConfigAuthenticator implements AuthenticatorInterface
 
         if (in_array($apiKey, $validKeys)) {
             $clientId = $this->getClientFromApiKey($apiKey);
+
             return AuthenticationResult::success($clientId, ['auth_type' => 'api_key']);
         }
 
@@ -64,6 +66,7 @@ class StaticConfigAuthenticator implements AuthenticatorInterface
 
         if (in_array($token, $validTokens)) {
             $clientId = $this->getClientFromToken($token);
+
             return AuthenticationResult::success($clientId, ['auth_type' => 'bearer_token']);
         }
 
@@ -73,12 +76,14 @@ class StaticConfigAuthenticator implements AuthenticatorInterface
     private function getClientFromApiKey(string $apiKey): string
     {
         $keyMap = config('mcp.auth.api_key_clients', []);
+
         return $keyMap[$apiKey] ?? 'unknown';
     }
 
     private function getClientFromToken(string $token): string
     {
         $tokenMap = config('mcp.auth.token_clients', []);
+
         return $tokenMap[$token] ?? 'unknown';
     }
 }

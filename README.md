@@ -14,7 +14,7 @@ A Laravel package that implements the Model Context Protocol (MCP) server specif
 - ✅ Rate limiting with per-client controls and burst protection
 - ✅ Performance monitoring and detailed logging
 - ✅ Extensible architecture for custom tools/resources
-- ✅ Laravel 10+ and 11+ support
+- ✅ Laravel 10+, 11+ and 12+ support
 - ✅ Comprehensive test suite
 - ✅ Auto-discovery of tools and resources
 - ✅ **NEW**: Advanced permission resolution system with custom resolvers
@@ -48,9 +48,9 @@ php artisan vendor:publish --tag=mcp-controllers
 
 ### 3. Laravel Version-Specific Setup
 
-#### Laravel 11 Setup (Recommended Method)
+#### Laravel 11+ (including Laravel 12) Setup (Recommended Method)
 
-For Laravel 11, manually register middleware in `bootstrap/app.php`:
+For Laravel 11+, manually register middleware in `bootstrap/app.php`:
 
 ```php
 <?php

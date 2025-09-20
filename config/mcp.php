@@ -60,7 +60,7 @@ return [
                     'resources.status',
                 ],
                 'field_access' => [],
-                'metadata' => ['tier' => 'default']
+                'metadata' => ['tier' => 'default'],
             ],
         ],
 
@@ -139,7 +139,6 @@ return [
      * | Logging Configuration
      * |--------------------------------------------------------------------------
      */
-
     'logging' => [
         'channel' => env('MCP_LOG_CHANNEL', 'mcp'),
         'level' => env('MCP_LOG_LEVEL', 'info'),

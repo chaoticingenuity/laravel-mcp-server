@@ -1,17 +1,18 @@
 <?php
+
 namespace App\Services\Custom\MCP\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Silber\Bouncer\BouncerFacade as Bouncer;
-use Silber\Bouncer\Database\Role;
 use Silber\Bouncer\Database\Ability;
+use Silber\Bouncer\Database\Role;
 
 class MCPBouncerSeeder extends Seeder
 {
     public function __construct(
         private \Silber\Bouncer\Bouncer $bouncer
-    ) {
-    }
+    ) {}
+
     public function run(): void
     {
         // Create MCP-related abilities
@@ -58,7 +59,7 @@ class MCPBouncerSeeder extends Seeder
         foreach ($productFields as $field) {
             Ability::firstOrCreate([
                 'name' => "access-fields.product.{$field}",
-                'title' => "Access Product {$field} Field"
+                'title' => "Access Product {$field} Field",
             ]);
         }
 
@@ -67,7 +68,7 @@ class MCPBouncerSeeder extends Seeder
         foreach ($userFields as $field) {
             Ability::firstOrCreate([
                 'name' => "access-fields.user.{$field}",
-                'title' => "Access User {$field} Field"
+                'title' => "Access User {$field} Field",
             ]);
         }
 
@@ -82,31 +83,31 @@ class MCPBouncerSeeder extends Seeder
         // Admin role
         Role::firstOrCreate([
             'name' => 'admin',
-            'title' => 'Administrator'
+            'title' => 'Administrator',
         ]);
 
         // MCP API User role
         Role::firstOrCreate([
             'name' => 'mcp_user',
-            'title' => 'MCP API User'
+            'title' => 'MCP API User',
         ]);
 
         // Public API role
         Role::firstOrCreate([
             'name' => 'public_api',
-            'title' => 'Public API Access'
+            'title' => 'Public API Access',
         ]);
 
         // Partner API role
         Role::firstOrCreate([
             'name' => 'partner_api',
-            'title' => 'Partner API Access'
+            'title' => 'Partner API Access',
         ]);
 
         // Internal tool role
         Role::firstOrCreate([
             'name' => 'internal_tool',
-            'title' => 'Internal Tool Access'
+            'title' => 'Internal Tool Access',
         ]);
     }
 

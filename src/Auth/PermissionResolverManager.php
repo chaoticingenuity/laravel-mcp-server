@@ -26,12 +26,14 @@ class PermissionResolverManager
     public function resolveUserPermissions($user): array
     {
         $resolver = $this->getResolverForUser($user);
+
         return $resolver ? $resolver->resolveUserPermissions($user) : [];
     }
 
     public function resolveUserFieldAccess($user): array
     {
         $resolver = $this->getResolverForUser($user);
+
         return $resolver ? $resolver->resolveUserFieldAccess($user) : [];
     }
 
@@ -44,8 +46,8 @@ class PermissionResolverManager
 
     private function registerDefaultResolvers(): void
     {
-        $this->registerResolver(new BouncerPermissionResolver());
-        $this->registerResolver(new DefaultPermissionResolver());
+        $this->registerResolver(new BouncerPermissionResolver);
+        $this->registerResolver(new DefaultPermissionResolver);
     }
 
     private function registerCustomResolvers(): void
