@@ -40,11 +40,13 @@ composer require chaoticingenuity/laravel-mcp-server
 php artisan vendor:publish --tag=mcp-config
 ```
 
-### 2. Publish Controllers and Middleware
+### 2. Publish Controllers (Optional)
 
 ```bash
 php artisan vendor:publish --tag=mcp-controllers
 ```
+
+**Note**: You only need to publish if you want to customize the MCPController. The middleware classes are used directly from the package namespace.
 
 ### 3. Laravel Version-Specific Setup
 
@@ -69,10 +71,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Register MCP middleware aliases
         $middleware->alias([
-            'mcp.auth' => \App\Http\Middleware\MCPAuthMiddleware::class,
-            'mcp.logging' => \App\Http\Middleware\MCPLoggingMiddleware::class,
-            'mcp.security' => \App\Http\Middleware\MCPSecurityMiddleware::class,
-            'mcp.throttle' => \App\Http\Middleware\MCPThrottleMiddleware::class,
+            'mcp.auth' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPAuthMiddleware::class,
+            'mcp.logging' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPLoggingMiddleware::class,
+            'mcp.security' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPSecurityMiddleware::class,
+            'mcp.throttle' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPThrottleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
