@@ -175,4 +175,27 @@ class MCPServiceProvider extends ServiceProvider
         }
         // Laravel 11+ users need to manually register in bootstrap/app.php
     }
+
+    /**
+     * Get middleware aliases for manual registration in Laravel 11+
+     *
+     * Usage in bootstrap/app.php:
+     *
+     * use ChaoticIngenuity\LaravelMCP\Providers\MCPServiceProvider;
+     *
+     * ->withMiddleware(function (Middleware $middleware) {
+     *     $middleware->alias(MCPServiceProvider::middlewareAliases());
+     * })
+     *
+     * @return array<string, string>
+     */
+    public static function middlewareAliases(): array
+    {
+        return [
+            'mcp.auth' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPAuthMiddleware::class,
+            'mcp.logging' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPLoggingMiddleware::class,
+            'mcp.security' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPSecurityMiddleware::class,
+            'mcp.throttle' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPThrottleMiddleware::class,
+        ];
+    }
 }

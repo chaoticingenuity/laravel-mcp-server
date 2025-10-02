@@ -31,4 +31,20 @@ class MCPController extends Controller
             ], 500);
         }
     }
+
+    public function handleInvalidMethod(Request $request): JsonResponse
+    {
+        return response()->json([
+            'jsonrpc' => '2.0',
+            'error' => [
+                'code' => -32600,
+                'message' => 'Invalid Request - Only POST method allowed for MCP endpoints',
+                'data' => [
+                    'method' => $request->method(),
+                    'allowed_methods' => ['POST']
+                ]
+            ],
+            'id' => $request->input('id', null)
+        ], 405)->header('Allow', 'POST');
+    }
 }

@@ -41,7 +41,7 @@ class MCPServer
             'result' => [
                 'protocolVersion' => '2024-11-05',
                 'capabilities' => [
-                    'tools' => [],
+                    'tools' => new \stdClass(),
                     'resources' => [
                         'subscribe' => false,
                         'listChanged' => false,

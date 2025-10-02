@@ -354,10 +354,10 @@ Make sure you've registered middleware aliases in `bootstrap/app.php`:
 
 ```php
 $middleware->alias([
-    'mcp.auth' => \App\Http\Middleware\MCPAuthMiddleware::class,
-    'mcp.logging' => \App\Http\Middleware\MCPLoggingMiddleware::class,
-    'mcp.security' => \App\Http\Middleware\MCPSecurityMiddleware::class,
-    'mcp.throttle' => \App\Http\Middleware\MCPThrottleMiddleware::class,
+    'mcp.auth' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPAuthMiddleware::class,
+    'mcp.logging' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPLoggingMiddleware::class,
+    'mcp.security' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPSecurityMiddleware::class,
+    'mcp.throttle' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPThrottleMiddleware::class,
 ]);
 ```
 
