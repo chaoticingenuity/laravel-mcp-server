@@ -12,9 +12,11 @@ class MCPLoggingMiddleware
     {
         $startTime = microtime(true);
 
+        $logChannel = $this->getLogChannel();
+
         // Log incoming request if debug enabled
         if (config('mcp.debug.log_all_requests', false)) {
-            Log::channel('mcp')->info('MCP Request Started', [
+            $logChannel->info('MCP Request Started', [
                 'client' => $request->input('mcp_client', 'unknown'),
                 'method' => $request->input('method'),
                 'tool' => $request->input('params.name'),
@@ -28,7 +30,7 @@ class MCPLoggingMiddleware
         $duration = round((microtime(true) - $startTime) * 1000, 2);
 
         // Always log completed requests
-        Log::channel('mcp')->info('MCP Request', [
+        $logChannel->info('MCP Request', [
             'client' => $request->input('mcp_client', 'unknown'),
             'method' => $request->input('method'),
             'tool' => $request->input('params.name'),
@@ -39,5 +41,25 @@ class MCPLoggingMiddleware
         ]);
 
         return $response;
+    }
+
+    /**
+     * Get log channel, falling back to default if 'mcp' channel not configured
+     */
+    private function getLogChannel()
+    {
+        try {
+            $channelName = config('mcp.logging.channel', 'mcp');
+
+            // Check if channel exists in logging config
+            if (config("logging.channels.{$channelName}")) {
+                return Log::channel($channelName);
+            }
+        } catch (\Exception $e) {
+            // Silently fall back to default
+        }
+
+        // Fall back to default channel
+        return Log::channel(config('logging.default', 'stack'));
     }
 }

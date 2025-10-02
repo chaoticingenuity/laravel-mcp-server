@@ -52,11 +52,12 @@ php artisan vendor:publish --tag=mcp-controllers
 
 #### Laravel 11+ (including Laravel 12) Setup (Recommended Method)
 
-For Laravel 11+, manually register middleware in `bootstrap/app.php`:
+For Laravel 11+, use the static helper method to register middleware in `bootstrap/app.php`:
 
 ```php
 <?php
 
+use ChaoticIngenuity\LaravelMCP\Providers\MCPServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -69,13 +70,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register MCP middleware aliases
-        $middleware->alias([
-            'mcp.auth' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPAuthMiddleware::class,
-            'mcp.logging' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPLoggingMiddleware::class,
-            'mcp.security' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPSecurityMiddleware::class,
-            'mcp.throttle' => \ChaoticIngenuity\LaravelMCP\Http\Middleware\MCPThrottleMiddleware::class,
-        ]);
+        // Register MCP middleware aliases using static helper
+        $middleware->alias(MCPServiceProvider::middlewareAliases());
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
